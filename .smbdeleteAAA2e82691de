@@ -5,13 +5,11 @@ from PhaseRetrieveTools import *
 #from pathos.multiprocessing import ProcessingPool as Pool
 #from pathos.multiprocessing import cpu_count
 from multiprocessing import Pool,cpu_count, Process
-import Queue
 import matplotlib.pyplot as plt
 import logging
 from scipy.io import loadmat
 import math
 import time
-
 
 
 
@@ -24,8 +22,8 @@ class Pupil:
                 oil_n = 1.515,
                 px_size = .11, #um
                 wl = .64, #um
-                k=1, #pupil reduction of size
-                par_mul = 1.):
+                k=1 #pupil reduction of size
+                ):
         self.img_size = img_size
         self.NA = NA
         self.oil_n = oil_n
@@ -39,18 +37,15 @@ class Pupil:
         self.center = center
         kx = 2*np.pi*(qx-center)/(px_size*img_size)
         ky = 2*np.pi*(qy-center)/(px_size*img_size)
-
-        self.pupilmask = np.ones_like(qx)*(kx**2+ky**2<=(2*np.pi*NA/wl*k)**2)
-
         self.xslope,self.yslope = qx/(img_size)*2*np.pi/px_size ,  qy/(img_size)*2*np.pi/px_size
         #with np.errstate(sqrt ='ignore'):
-        parabola0 = np.sqrt((2*np.pi*oil_n/wl)**2-(kx*self.pupilmask)**2-(ky*self.pupilmask)**2)
-        #parabola0[np.isnan(parabola0)] = 0
-        self.parabola = parabola0*par_mul
+        parabola0 = np.sqrt((2*np.pi*oil_n/wl)**2-kx**2-ky**2)
+        parabola0[np.isnan(parabola0)] = 0
+        self.parabola = parabola0*1
 
         w = img_size/2
 
-
+        self.pupilmask = np.ones_like(qx)*(kx**2+ky**2<=(2*np.pi*NA/wl*k)**2)
 
 
 
@@ -325,7 +320,7 @@ class FitZern:
         self.ph.zernWeights[1] = bgMean
         self.ph.zernWeights[0] = a
 
-        #print 'A',self.ph.zernWeights[0],'bg',self.ph.zernWeights[1]
+        print 'A',self.ph.zernWeights[0],'bg',self.ph.zernWeights[1]
 
     def fitOneZern(self,i,debug):
         '''compute derivative for i weight of zernike array and update weight'''
@@ -557,7 +552,7 @@ class FitZern:
             print 'end of epochs, dL',dL
 
 class PhaseFitWrap(object):
-    def __init__(self,stack=None,NA=1.49,zStep=.1,skip=0,n_oil=1.51,px_size=.11,wl = .64,zern_num = 36,smooth=0,fitPupil=True,fileName = None,plot = True,par_mul = 1.):
+    def __init__(self,stack=None,NA=1.49,zStep=.1,skip=0,n_oil=1.51,px_size=.11,wl = .64,zern_num = 36,smooth=0,fitPupil=True,fileName = None,plot = True):
         if fileName:
             myDict = cPickle.load(open(fileName,'r'))
             img_size = myDict["pupilAmp"].shape[0]
@@ -610,7 +605,7 @@ class PhaseFitWrap(object):
         self.smooth=smooth
 
 
-        self.pupil = Pupil(img_size=self.size,NA=self.NA,oil_n=self.n_oil,px_size=self.px_size,wl=self.wl,par_mul=par_mul)
+        self.pupil = Pupil(img_size=self.size,NA=self.NA,oil_n=self.n_oil,px_size=self.px_size,wl=self.wl)
         #self.pupil.parabola = self.pupil.parabola*1.5
         self.zern = Zernike(self.pupil,zern_num)
         self.zernPhase = ZernPhase(ZernikeObject = self.zern,
@@ -732,7 +727,7 @@ class PhaseFitWrap(object):
 
         plt.show()
 
-    def showCRLB(self,num_phot,bg,ymax=0):
+    def showCRLB(self,num_phot,bg):
 
         crlb = ModelPhaseCRLB1(self.zVect0.min(),self.zVect0.max(),self.zStep,num_phot,bg,self.zernPhase,size=self.size)
         crlb.runPhase()
@@ -744,8 +739,6 @@ class PhaseFitWrap(object):
         plt.legend('xyz')
         plt.xlabel('z, um')
         plt.ylabel('std(err), nm')
-        if ymax:
-            plt.ylim([0,ymax])
         plt.show()
 
     def dump(self,path):
@@ -806,8 +799,8 @@ class CropBeads(object):
         self.Icoordinates_selected=[]
         for x1,y1 in zip(x,y):
             I=full_frame_exp_stack[:,int(y1-s):int(y1+s),int(x1-s):int(x1+s)]
-            if I.mean(0).shape == (crop_size,crop_size):# and \
-                #len(peak_local_max(I.mean(0),min_distance=crop_size/5,exclude_border=False))==1:
+            if I.mean(0).shape == (crop_size,crop_size) and \
+                len(peak_local_max(I.mean(0),min_distance=crop_size/5,exclude_border=False))==1:
 
                 self.crops.append(I)
                 self.Icoordinates_selected.append([y1,x1])
@@ -862,7 +855,7 @@ class ReconstructionMLE:
                 min_photons = 100,
                 min_distance=16,
                 ERF = LE,
-                bg_kernel=10,
+                bg_kernel=5,
                 x_thr=.2,
                 fileList = None,
                 photon_convert = None):
@@ -930,7 +923,7 @@ class ReconstructionMLE:
         px = self.px
         try:
             while 1:
-                i = self.qIn.get(True,5)
+                i = self.qIn.get()
                 with self.pool.lock:
                     frame = self.readFrame(i)
                 out = self.poolMLE(frame)
@@ -939,7 +932,7 @@ class ReconstructionMLE:
                         self.pool.arr.append([int(i),-o.x+o.X*px,-o.y+o.Y*px,o.z, int(o.a), int(o.b)])
                     self.pool.exitCodes.append(multiprocessing.current_process().exitcode)
                     print '\r{} frames, {} particles'.format(len(self.pool.exitCodes),len(self.pool.arr)),
-        except Queue.Empty:
+        except Queue.empty:
             return
 
     def collectData(self):
@@ -965,26 +958,16 @@ class ReconstructionMLE:
                 print '\r',i,
             print 'created file queue'
 
-            if len(self.workers)>0:
-                for i in range(len(self.workers)):
-                    j = self.workers.pop()
-                    j.terminate()
 
-            for i in range(cpu_count()):
-                self.workers.append(multiprocessing.Process(target=self.worker, name=str(i),args=()))
+            if len(self.workers)==0:
+                for i in range(cpu_count()):
+                    self.workers.append(multiprocessing.Process(target=self.worker, name=str(i),args=()))
 
             for j in self.workers:
-                try:
-                    j.daemon=True
-                    j.start()
-                except AssertionError:
-                    j.terminate()
-
-
-
+                j.daemon=True
+                j.start()
             print 'started {} workers'.format(len(self.workers))
         except Exception as e:
-            traceback.print_exc()
             print e
 
 

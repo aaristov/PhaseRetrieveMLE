@@ -1301,7 +1301,8 @@ class XcorrMLE:
                 MLE=MLE,
                 MLE_ERF = LE,
                 MLE_gamma = 1.,
-                pool = 0
+                pool = 0,
+                **kwargs
                 ):
         self.template = psfArray
         self.zvector = zVect
