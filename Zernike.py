@@ -2,8 +2,6 @@ import numpy as np
 import cPickle
 from skimage import io
 from PhaseRetrieveTools import *
-#from pathos.multiprocessing import ProcessingPool as Pool
-#from pathos.multiprocessing import cpu_count
 from multiprocessing import Pool,cpu_count, Process
 import Queue
 import matplotlib.pyplot as plt
@@ -11,6 +9,8 @@ import logging
 from scipy.io import loadmat
 import math
 import time
+
+
 
 
 
