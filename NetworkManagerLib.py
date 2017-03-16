@@ -14,11 +14,11 @@ class NetworkManager(object):
         mgr = multiprocessing.Manager()
 
         if myParamsPath is None:
-            myParams = dict(min_photons=500,
-                        x_thr=.2,
+            myParams = dict(min_photons=100,
+                        x_thr=.1,
                         min_distance=5,
-                        crop_size=24,
-                        bg_kernel=5,
+                        crop_size=32,
+                        bg_kernel=10,
                         myFitPath = myFitPath)
         else:
             myParams = cPickle.load(open(myParamsPath))
@@ -73,7 +73,7 @@ class NetworkManager(object):
 
     def collectionRoutines(self):
         path = self.folder[:-5]+'myLoctmp.csv'
-        header='frame,x[um],y[um],z[um],intensity[photons],background[photons]\n'
+        header='"frame","x [nm]","y [nm]","z [nm]","intensity [photons]","background [photons]"\n'
 
         try:
             f = open(path,'r')
@@ -150,7 +150,7 @@ class NetworkManager(object):
                         self.queue.put((self.length,diff[i]))
                         self.length +=1
                         self.fileList.append(diff[i])
-                time.sleep(10)
+                time.sleep(60)
 
             except:
                 traceback.print_exc()
@@ -249,7 +249,7 @@ class NetworkReconstructor(object):
 
                 self.lock.acquire()
                 for o in out:
-                    self.res.append([int(i),-o.x+o.X*px,-o.y+o.Y*px,o.z, int(o.a), int(o.b)])
+                    self.res.append([int(i),(-o.x+o.X*px)*1000,(-o.y+o.Y*px)*1000,(o.z)*1000, int(o.a), int(o.b)])
                 self.frames.append(i)
                 self.lock.release()
                     #print '\r{} frames, {} particles'.format(len(self.pool.exitCodes),len(self.pool.arr)),
