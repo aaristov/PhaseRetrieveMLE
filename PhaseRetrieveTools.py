@@ -666,7 +666,7 @@ class ModelPhaseCRLB:
 
 class ModelPhaseCRLB1(object):
 
-    def __init__(self,minZ, maxZ,zstep,num_phot,bg,my_phase,size=64):
+    def __init__(self,minZ, maxZ,zstep,num_phot,bg,my_phase,size=64,units='um'):
         self.phase = my_phase.ret_phase
         self.num_phot = num_phot
         self.bg = bg
@@ -678,7 +678,10 @@ class ModelPhaseCRLB1(object):
         self.maxZ=maxZ;
         #self.phase=phase;
         self.taille=self.phase.shape[0];
-        self.zstep = zstep
+        if units == 'um':
+            self.zstep = zstep
+        elif units == 'nm':
+            self.zstep = zstep/1000.
         self.step = 1.
         self.dataGenerator = my_phase.gen_PSF
         self.size=size
@@ -754,6 +757,112 @@ class ModelPhaseCRLB1(object):
         #f[f<=0] = 1e-10
 
 
+        return f;
+
+class ModelPhaseCRLB2(object):
+
+    def __init__(self,minZ, maxZ,zstep,num_phot,bg,my_phase,size=64,units='um'):
+        self.phase = my_phase.ret_phase
+        self.num_phot = num_phot
+        self.bg = max([bg,1.])
+        #print self.bg
+        self.pupilmask = my_phase.ret_pupil
+        self.sph = my_phase.parabola
+        self.xslope = my_phase.xslope
+        self.yslope = my_phase.yslope
+        self.minZ=minZ;
+        self.maxZ=maxZ;
+        #self.phase=phase;
+        self.taille=self.phase.shape[0];
+        if units == 'um':
+            self.zstep = zstep
+        elif units == 'nm':
+            self.zstep = zstep/1000.
+        self.step = 1.
+        self.dataGenerator = my_phase.gen_PSF
+        self.size=size
+
+    def runPhase(self):
+        nb=(int)((self.maxZ-self.minZ)/self.zstep);
+        zrange = np.arange(self.minZ,self.maxZ,self.zstep)
+        zrangel = len(zrange)
+
+        self.x_abs= zrange;
+        self.CRLB= np.zeros((zrangel,5));
+
+        for u in range(zrangel):
+            aa = np.empty((5,self.size,self.size))
+
+            aa[0] = self.crlbX(0, 0, zrange[u], .001);
+            aa[1] = self.crlbY(0, 0, zrange[u], .001);
+            aa[2] = self.crlbZ(0, 0, zrange[u], .01);
+            aa[3] = self.crlbA(zrange[u], 10.);
+            aa[4] = self.crlbB(zrange[u], .1);
+            M = self.computeF(0, 0, zrange[u]);
+
+            #aa = np.array([x,y,z,a,b])
+
+            #print aa.shape
+            bb = aa.reshape((len(aa),1,self.size,self.size))
+
+            cc = np.sum(aa*bb/M,axis=(2,3))
+            self.CRLB[u] = np.sqrt(np.linalg.inv(cc).diagonal())
+            #self.CRLB[u] = 1./np.sqrt(cc.diagonal())
+
+
+    def dump(self,path):
+        '''cPickles oblect to the path'''
+        cPickle.dump(self.__dict__,open(path,'wb'))
+
+    def load(self,path):
+        tmp_dict = cPickle.load(open(path,'rb'))
+        self.__dict__.update(tmp_dict)
+
+    def crlbZ(self,x, y, z,hdec):
+        f2 = self.computeF(x, y, z+hdec);
+        #f1 = self.computeF(x, y, z);
+        f0 = self.computeF(x, y, z-hdec);
+        truc=(f2-f0)/(2*(hdec));
+        return truc
+
+    def crlbX(self,x, y, z,hdec):
+        f2 = self.computeF(x+hdec, y, z);
+        #f1 = self.computeF(x, y, z);
+        f0 = self.computeF(x-hdec, y, z);
+        truc=(f2-f0)/(2*(hdec));
+        return truc
+
+
+    def crlbY(self,x, y, z,hdec):
+        f2 = self.computeF(x, y+hdec, z);
+        f1 = self.computeF(x, y, z);
+        f0 = self.computeF(x, y-hdec, z);
+        truc=(f2-f0)/(2*(hdec));
+        return truc
+
+
+    def crlbA(self,z,hdec):
+        f2 = self.computeAB(z,self.num_phot+hdec,self.bg);
+        f1 = self.computeAB(z,self.num_phot,self.bg);
+        f0 = self.computeAB(z,self.num_phot-hdec,self.bg);
+        truc=(f2-f0)/(2*(hdec));
+        return truc
+
+
+    def crlbB(self,z,hdec):
+        f2 = self.computeAB(z,self.num_phot,self.bg+hdec);
+        f1 = self.computeAB(z,self.num_phot,self.bg);
+        f0 = self.computeAB(z,self.num_phot,self.bg-hdec);
+        truc=(f2-f0)/(2*(hdec));
+        return truc
+
+
+    def computeF(self,x, y, z):
+        f=(self.dataGenerator(x,y,z,self.num_phot,self.bg,self.size));
+        return f;
+
+    def computeAB(self,z,a,b):
+        f=(self.dataGenerator(0,0,z,a,b,self.size));
         return f;
 
     #def dataGenerator(self,x,y,z):
@@ -1667,7 +1776,7 @@ def saveVISP3D(table_fxyzib,path,selection=None,convert_um2nm = True):
 
 def saveTS(table_fxyzib,path):
     np.savetxt(path,table_fxyzib,delimiter=',',
-           comments='',header='frame,x[um],y[um],z[um],intensity[photons],background[photons]')
+           comments='',header='frame,x[nm],y[nm],z[nm],intensity[photons],background[photons]')
 
 
 class BeadsStats(object):
@@ -1688,14 +1797,15 @@ class BeadsStats(object):
             self.labels = ms.labels_
             self.cluster_centers = ms.cluster_centers_
 
-            self.labels_unique = np.unique(labels)
-            self.n_clusters_ = len(labels_unique)
+            self.labels_unique = np.unique(self.labels)
+            self.n_clusters_ = len(self.labels_unique)
 
-            print("number of estimated clusters : %d" % n_clusters_)
-            print 'Used datset with the shape',X.shape
-            print 'found',labels.shape,'groups'
-            print 'number of groups', labels_unique.shape
+            print("number of estimated clusters : %d" % self.n_clusters_)
+            print 'Used datset with the shape',subdata.shape
+            print 'found',self.labels.shape,'groups'
+            print 'number of groups', self.labels_unique.shape
         except Exception as e:
+            traceback.print_exc()
             print e
 
     def plotSegment(self):
@@ -1732,7 +1842,7 @@ class BeadsStats(object):
         plt.title('group %i'%group)
         plt.show()
 
-    def doStats(self,z_step,n_frames,phase, background=0, group=None):
+    def doStats(self,z_step,n_frames,phase, background=0, group=None, units = 'um'):
         '''
         dataset should include localizations of beads fixed at the same z position for n_frames, then moved for z_step
         '''
@@ -1764,11 +1874,13 @@ class BeadsStats(object):
         for i in np.unique(t):
             #print i
             found_sorted.append(subdata[t==i])
-        print len(found_sorted)
+        print 'found %i steps'%len(found_sorted)
         #found_sorted = np.array(found_sorted)
         found_std = np.array([tmp[:].std(axis=0) for tmp in found_sorted])
         found_mean = np.array([tmp[:].mean(axis=0) for tmp in found_sorted])
-        print len(found_std)
+        print 'found %i stats'%len(found_std)
+        #plt.plot(tmp[np.abs(tmp-tmp.mean())<tmp.std()*3])
+        #plt.show()
 
         ### compute CRLB
         num_phot = subdata[:,a].mean()
@@ -1776,7 +1888,7 @@ class BeadsStats(object):
             bg = subdata[:,b].mean()
         else:
             bg = background
-        crlb = ModelPhaseCRLB1(-2,2,abs(z_step),num_phot,bg,myFit.zernPhase)
+        crlb = ModelPhaseCRLB2(-2,2,abs(z_step),num_phot,bg,phase,units=units)
         crlb.runPhase()
 
         print 't shift',np.median(t)
@@ -1844,18 +1956,21 @@ class BeadsStats(object):
 
 
 
-        plt.plot(crlb.x_abs,crlb.xCRLB*1000,crlb.x_abs,crlb.yCRLB*1000,crlb.x_abs,crlb.zCRLB*1000)
+        plt.plot(crlb.x_abs,crlb.CRLB[:,0]*1000,crlb.x_abs,crlb.CRLB[:,1]*1000,crlb.x_abs,crlb.CRLB[:,2]*1000)
         plt.title('CRLB, photons: {}, bg: {}'.format(num_phot,bg))
         plt.grid()
         plt.xlabel('z, um')
         plt.ylabel('std(err), nm')
         plt.ylim(0,100)
         #plt.show()
-
-        p=(np.unique(t)-15)*z_step
-        plt.plot(p,found_std[:,x]*1000,'bo')
-        plt.plot(p,found_std[:,y]*1000,'go')
-        plt.plot(p,found_std[:,z]*1000,'ro')
+        if units == 'um':
+            mul = 1
+        elif units == 'nm':
+            mul = 1000
+        p=(np.unique(t)-15)*z_step/mul
+        plt.plot(p,found_std[:,x]*1000/mul,'bo')
+        plt.plot(p,found_std[:,y]*1000/mul,'go')
+        plt.plot(p,found_std[:,z]*1000/mul,'ro')
         plt.legend('xyzXYZ')
 
         plt.show()
