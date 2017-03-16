@@ -748,6 +748,22 @@ class PhaseFitWrap(object):
             plt.ylim([0,ymax])
         plt.show()
 
+    def showCRLB1(self,num_phot,bg,ymax=0):
+
+        crlb = ModelPhaseCRLB2(self.zVect0.min(),self.zVect0.max(),self.zStep,num_phot,bg,self.zernPhase,size=self.size)
+        crlb.runPhase()
+
+
+        plt.plot(crlb.x_abs,crlb.CRLB[:,0]*1000,crlb.x_abs,crlb.CRLB[:,1]*1000,crlb.x_abs,crlb.CRLB[:,2]*1000)
+        plt.title('CRLB, photons: {}, bg: {}'.format(num_phot,bg))
+        plt.grid()
+        plt.legend('xyz')
+        plt.xlabel('z, um')
+        plt.ylabel('std(err), nm')
+        if ymax:
+            plt.ylim([0,ymax])
+        plt.show()
+
     def dump(self,path):
         '''cPickles oblect to the path'''
         myDict = dict(wl = self.wl,
@@ -936,7 +952,7 @@ class ReconstructionMLE:
                 out = self.poolMLE(frame)
                 with self.pool.lock:
                     for o in out:
-                        self.pool.arr.append([int(i),-o.x+o.X*px,-o.y+o.Y*px,o.z, int(o.a), int(o.b)])
+                        self.pool.arr.append([int(i),(-o.x+o.X*px)*1000,(-o.y+o.Y*px)*1000,(o.z)*1000, int(o.a), int(o.b)])
                     self.pool.exitCodes.append(multiprocessing.current_process().exitcode)
                     print '\r{} frames, {} particles'.format(len(self.pool.exitCodes),len(self.pool.arr)),
         except Queue.Empty:
@@ -949,7 +965,7 @@ class ReconstructionMLE:
 
         except Exception as e:
             print e
-        return self.found
+        return self.found.copy()
 
     def parallelProcessing(self,start = None,end = None):
 
