@@ -446,4 +446,4 @@ class SPsampleClass:
         except EOFError:
             print 'No more frames'
 
-print 'SPsample library is loaded'
+#print 'SPsample library is loaded'
