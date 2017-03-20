@@ -664,7 +664,7 @@ class ModelPhaseCRLB:
 """
 
 
-class ModelPhaseCRLB1(object):
+class ModelPhaseCRLB_old(object):
 
     def __init__(self,minZ, maxZ,zstep,num_phot,bg,my_phase,size=64,units='um'):
         self.phase = my_phase.ret_phase
@@ -759,7 +759,7 @@ class ModelPhaseCRLB1(object):
 
         return f;
 
-class ModelPhaseCRLB2(object):
+class ModelPhaseCRLB(object):
 
     def __init__(self,minZ, maxZ,zstep,num_phot,bg,my_phase,size=64,units='um'):
         self.phase = my_phase.ret_phase
