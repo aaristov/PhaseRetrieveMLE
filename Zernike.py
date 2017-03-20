@@ -13,8 +13,6 @@ import time
 
 
 
-
-
 class Pupil:
     ''' Defines pupil parameters and parabola based on the size of image and optical params'''
 
@@ -734,7 +732,7 @@ class PhaseFitWrap(object):
 
     def showCRLB(self,num_phot,bg,ymax=0):
 
-        crlb = ModelPhaseCRLB1(self.zVect0.min(),self.zVect0.max(),self.zStep,num_phot,bg,self.zernPhase,size=self.size)
+        crlb = ModelPhaseCRLB(self.zVect0.min(),self.zVect0.max(),self.zStep,num_phot,bg,self.zernPhase,size=self.size)
         crlb.runPhase()
 
 
@@ -750,7 +748,7 @@ class PhaseFitWrap(object):
 
     def showCRLB1(self,num_phot,bg,ymax=0):
 
-        crlb = ModelPhaseCRLB2(self.zVect0.min(),self.zVect0.max(),self.zStep,num_phot,bg,self.zernPhase,size=self.size)
+        crlb = ModelPhaseCRLB(self.zVect0.min(),self.zVect0.max(),self.zStep,num_phot,bg,self.zernPhase,size=self.size)
         crlb.runPhase()
 
 
