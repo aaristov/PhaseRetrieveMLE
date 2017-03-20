@@ -808,6 +808,9 @@ class ModelPhaseCRLB2(object):
             cc = np.sum(aa*bb/M,axis=(2,3))
             self.CRLB[u] = np.sqrt(np.linalg.inv(cc).diagonal())
             #self.CRLB[u] = 1./np.sqrt(cc.diagonal())
+        self.xCRLB = self.CRLB[:,0]
+        self.yCRLB = self.CRLB[:,1]
+        self.zCRLB = self.CRLB[:,2]
 
 
     def dump(self,path):
