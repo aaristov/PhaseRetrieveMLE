@@ -1514,7 +1514,7 @@ class XcorrMLE:
             s = self.cropSize/2
             self.crops=[]
             for x1,y1,z in zip(x,y,self.zinits):
-                I=self.img[int(y1-s):int(y1+s),int(x1-s):int(x1+s)]
+                I=self.img[int(y1-s+1):int(y1+s+1),int(x1-s+1):int(x1+s+1)]
                 if self.debug: print 'I.shape',I.shape
                 if I.shape == (self.cropSize,self.cropSize):
                     tmp = SingleCrop(I,X=x1 -self.shift[0] - self.pad_shift[0],Y=y1 -self.shift[1] - self.pad_shift[1],Z=z)
