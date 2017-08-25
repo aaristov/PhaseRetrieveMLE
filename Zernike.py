@@ -555,7 +555,7 @@ class FitZern:
             print 'end of epochs, dL',dL
 
 class PhaseFitWrap(object):
-    def __init__(self,stack=None,NA=1.49,zStep=.1,skip=0,n_oil=1.51,px_size=.11,wl = .64,zern_num = 36,smooth=0,fitPupil=True,fileName = None,plot = True,par_mul = 1.):
+    def __init__(self,stack=None,NA=1.49,zStep=.1,skip=0,n_oil=1.51,px_size=.11,wl = .64,zern_num = 36,smooth=0,fitPupil=True,fileName = None,plot = False,par_mul = 1.):
         if fileName:
             myDict = cPickle.load(open(fileName,'r'))
             img_size = myDict["pupilAmp"].shape[0]
