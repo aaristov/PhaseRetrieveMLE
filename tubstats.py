@@ -65,7 +65,7 @@ def gaussFitHist(h,num_peaks=1):
     return out
 
 
-def doubleGaussFitHist(curve,num_peaks=2):
+def doubleGaussFit(curve,prefix=''):
     '''
     Fitting gaussian function to the histogram
     input: curve, 2D array
@@ -83,9 +83,15 @@ def doubleGaussFitHist(curve,num_peaks=2):
     xnew = np.arange(x[0],x[-1],xstep/10)
     y = curve[:,1]
 
+
+    if xstep>1:
+        mul = 1 #data in nm
+    else:
+        mul = 1000 #data in um
+
     n = len(x)                          #the number of data
     mean1 = x[np.argmax(y)]#sum(x*y)/n                   #note this correction
-    sigma = .01#sum(y*(x-mean)**2)/n        #note this correction
+    sigma = 10./mul #sum(y*(x-mean)**2)/n        #note this correction
     a1 = .8*y.max()
     print 'x1,a1,sigma',mean1,a1,sigma
 
@@ -97,7 +103,7 @@ def doubleGaussFitHist(curve,num_peaks=2):
 
     peak2gaus = gaus(x,a2,mean2,sigma)
 
-    plt.plot(x,y,'k-')
+    plt.bar(x-xstep/2.,y,width=xstep)
     #plt.plot(x,peak1gaus)
     #plt.plot(x,peak2gaus)
     #plt.plot(x,peak1gaus+peak2gaus)
@@ -110,10 +116,61 @@ def doubleGaussFitHist(curve,num_peaks=2):
     gg=gaus2(xnew,*popt)
     g1 = gaus(xnew,popt[0],popt[2],popt[4])
     g2 = gaus(xnew,popt[1],popt[3],popt[4])
+    #plt.plot(xnew,gg,'r-',label='fit')
+    plt.plot(xnew,g1,'r-',label='fit1')
+    plt.plot(xnew,g2,'r-',label='fit2')
+    plt.title('{} \npeak2peak: {} nm'.format(prefix,np.round(np.abs(popt[2]-popt[3])*mul,1)))
+
+    out = popt
+
+
+    return out
+
+def singleGaussFit(curve,prefix=''):
+    '''
+    Fitting gaussian function to the curve
+    input: curve, 2D array
+    output: dictionary of parameters for 1 peak
+    prifix: a phrase to add before the title
+    '''
+    def gaus(x,a,x0,sigma):
+        return a*exp(-(x-x0)**2/(2*sigma**2))
+
+
+
+    x = curve[:,0]
+    xstep = x[1]-x[0]
+    if xstep>1:
+        mul = 1 #data in nm
+    else:
+        mul = 1000 #data in um
+    xnew = np.arange(x[0],x[-1],xstep/10)
+    y = curve[:,1]
+
+    n = len(x)                          #the number of data
+    mean1 = x[np.argmax(y)]#sum(x*y)/n                   #note this correction
+    sigma = 30./mul#sum(y*(x-mean)**2)/n        #note this correction
+    a1 = 1.*y.max()
+    print 'x1,a1,sigma',mean1,a1,sigma
+
+    peak1gaus = gaus(x,a1,mean1,sigma)
+
+
+
+
+    plt.bar(x-xstep/2.,y,width=xstep)
+    #plt.plot(x,peak1gaus)
+    #plt.plot(x,peak2gaus)
+    #plt.plot(x,peak1gaus+peak2gaus)
+    #plt.plot(x,y2)
+
+
+    popt,pcov = curve_fit(gaus,x,y,p0=[a1,mean1,sigma])
+
+    #plt.hist(x,y)
+    gg=gaus(xnew,*popt)
     plt.plot(xnew,gg,'r-',label='fit')
-    plt.plot(xnew,g1,'b-',label='fit1')
-    plt.plot(xnew,g2,'b-',label='fit2')
-    plt.title('inter-peak distance: {} nm'.format(np.round(np.abs(popt[2]-popt[3])*1000,1)))
+    plt.title('{} sigma: {} nm'.format(prefix,np.round(popt[2]*mul,0)))
 
     out = popt
 

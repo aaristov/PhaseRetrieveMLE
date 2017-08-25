@@ -7,4 +7,4 @@ print myDict
 json.dump(json.dumps(myDict),open('server.dict','w'))
 
 s = NetworkManager(ip=ipv4,filePath=sys.argv[1],
-                  myFitPath='../data/2017-03-02-tub/SP-fit.pkl')
+                  myFitPath='../data/2017-03-27-dual-ast/f700-cam1.pkl')

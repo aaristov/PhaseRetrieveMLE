@@ -15,9 +15,9 @@ class NetworkManager(object):
 
         if myParamsPath is None:
             myParams = dict(min_photons=100,
-                        x_thr=.1,
+                        x_thr=.2,
                         min_distance=5,
-                        crop_size=32,
+                        crop_size=12,
                         bg_kernel=10,
                         myFitPath = myFitPath)
         else:
