@@ -1,5 +1,5 @@
 import numpy as np
-
+import _pickle as cPickle
 from skimage.feature import match_template
 
 import glob
@@ -96,16 +96,16 @@ def phase_retrieve(stack,zvector,iterations=15,zstep=.5,debug=0,smooth=5):
     stack_center=stack_size//2
     rolling_vector = np.concatenate([np.arange(stack_size)[stack_center:-1],np.arange(stack_size)[:0:-1],np.arange(stack_size)[:stack_center+1]])
     rolling_vector_z = np.concatenate([zvector[stack_center:-1],zvector[:0:-1],zvector[:stack_center+1]])
-    print 'Stack size: %d, center: %d'%(stack_size,stack_center)
-    print rolling_vector
-    print rolling_vector_z
+    #print 'Stack size: %d, center: %d'%(stack_size,stack_center)
+    #print rolling_vector
+    #print rolling_vector_z
     I0=stack[rolling_vector[-1]]
     prev_index=rolling_vector[-1]
     SE = []
     prev_phase = []
     fig = plt.figure()
     for iter in range(iterations):
-        print '\riteration %d'%(iter+1),
+        #print '\riteration %d'%(iter+1),
         for step in range(len(rolling_vector)-1):
             #print rolling_vector[step]
             index=rolling_vector[step]
@@ -218,10 +218,10 @@ def phase_retrieve_parallel_f(stack,parabola,mask,iterations=2,zstep=.1,phaseini
         cos=np.cos(phaseF).mean(axis=0)
         sin=np.sin(phaseF).mean(axis=0)
         phaseFmean=np.arctan2(sin,cos)
-        print '\r',iter,
+        #print '\r',iter,
 
         if debug:
-            print len(ampli.shape)
+            #print len(ampli.shape)
 
             plt.imshow(flatten_stack(ampli))
             plt.show()
@@ -233,9 +233,9 @@ def phase_retrieve_parallel_f(stack,parabola,mask,iterations=2,zstep=.1,phaseini
         savePhaseFI, saveAmpliFI = phaseFmean, saveAmpli
 
 
-        print 'Phase variance',stab_PhaseF[-1],
+        #print 'Phase variance',stab_PhaseF[-1],
         if stab_PhaseF[-1]<stop:
-            print 'converged'
+            #print 'converged'
             break
     return saveAmpli,phaseFmean,np.array(stab_AmpliF), np.array(stab_PhaseF),0
 
@@ -280,10 +280,10 @@ def phase_retrieve_parallel_float_pupil(stack,parabola,mask,iterations=2,zstep=.
         cos=np.cos(phaseF).mean(axis=0)
         sin=np.sin(phaseF).mean(axis=0)
         phaseFmean=np.arctan2(sin,cos)
-        print '\r',iter,
+        #print '\r',iter,
 
         if debug:
-            print len(ampli.shape)
+            #print len(ampli.shape)
 
             plt.imshow(flatten_stack(ampli-stack))
             plt.show()
@@ -297,9 +297,9 @@ def phase_retrieve_parallel_float_pupil(stack,parabola,mask,iterations=2,zstep=.
         stab_AmpliF.append(saveAmpli)
         stab_PhaseF.append(phaseFmean)
 
-        print 'Phase variance',stab_PhaseF1,
+        #print 'Phase variance',stab_PhaseF1,
         if stab_PhaseF1 < stop:
-            print 'converged'
+            #print 'converged'
             break
     return saveAmpli,phaseFmean,np.array(stab_AmpliF), np.array(stab_PhaseF),0
 
@@ -325,7 +325,7 @@ def phase_retrieve_parallel_float_pupil_smooth_phase(stack,vector,parabola,mask,
         defocus = 0
     if debug:
         import matplotlib.pyplot as plt
-        print 'DeltaZ len', len(deltaZ)
+        #print 'DeltaZ len', len(deltaZ)
     #saveAmpli=np.ones_like(stack[0])*mask
     saveAmpli=mask
     #phaseFmean=smooth_phase(phaseinit,mask)
@@ -345,10 +345,10 @@ def phase_retrieve_parallel_float_pupil_smooth_phase(stack,vector,parabola,mask,
         ampli,phase=decomp1(saveAmpli,phaseFprop)
 
         if debug:
-            print 'phase shape ', phase.shape
+            #print 'phase shape ', phase.shape
             fig = plt.figure()
             fig.add_subplot(121)
-            print 'phaseFmean shape ',phaseFmean.shape
+            #print 'phaseFmean shape ',phaseFmean.shape
             plt.imshow(phaseFmean)
             fig.add_subplot(122)
             plt.imshow(saveAmpli)
@@ -364,10 +364,10 @@ def phase_retrieve_parallel_float_pupil_smooth_phase(stack,vector,parabola,mask,
         cos=np.cos(phaseF).mean(axis=0)
         sin=np.sin(phaseF).mean(axis=0)
         phaseFmean=np.arctan2(sin,cos)
-        print '\r',iter,
+        #print '\r',iter,
 
         if debug:
-            print len(ampli.shape)
+            #print len(ampli.shape)
 
             #plt.imshow(flatten_stack(ampli-stack))
             plt.imshow(flatten_stack(ampli)**2)
@@ -386,9 +386,9 @@ def phase_retrieve_parallel_float_pupil_smooth_phase(stack,vector,parabola,mask,
         #stab_AmpliF.append(saveAmpli)
         #stab_PhaseF.append(phaseFmean)
 
-        print 'Phase variance',stab_PhaseF1,
+        #print 'Phase variance',stab_PhaseF1,
         if stab_PhaseF1 < stop:
-            print 'converged'
+            #print 'converged'
             break
     #return saveAmpli,phaseFmean,np.array(stab_AmpliF), np.array(stab_PhaseF),0
     return saveAmpli,phaseFmean,0, 0,0
@@ -397,7 +397,7 @@ def phase_retrieve_parallel_float_pupil_smooth_phase(stack,vector,parabola,mask,
 def phase_retrieve_parallel_float_pupil_smooth_phase_pool(stack,parabola,mask,pool,iterations=2,zstep=.1,phaseinit=0,initialZ=0,stop = 10,debug=0):
 
     s=pool
-    print s
+    #print s
     stack = stack/stack.sum(axis=(-2,-1)).reshape(len(stack),1,1)
     if debug:
         import matplotlib.pyplot as plt
@@ -409,7 +409,7 @@ def phase_retrieve_parallel_float_pupil_smooth_phase_pool(stack,parabola,mask,po
         #    deltaZ[s]=(s-stackCenter)*zstep
         #
         deltaZ = np.arange(-(s1-stackCenter)*zstep,(s1-stackCenter)*zstep,zstep)
-        print deltaZ
+        #print deltaZ
         defocus = parabola*np.fft.fftshift(deltaZ).reshape(len(deltaZ),1,1)
         defocus1 = parabola*(deltaZ).reshape(len(deltaZ),1,1)
     else:
@@ -439,7 +439,7 @@ def phase_retrieve_parallel_float_pupil_smooth_phase_pool(stack,parabola,mask,po
     try:
         #s = Pool(cpu_count())
         #s.restart()
-        print 'Found ',s.ncpus,' cores'
+        #print 'Found ',s.ncpus,' cores'
         #res  = s.map(lambda x: x**2, range(4))
         #print res
 
@@ -454,7 +454,7 @@ def phase_retrieve_parallel_float_pupil_smooth_phase_pool(stack,parabola,mask,po
             if debug:
                 fig = plt.figure()
                 fig.add_subplot(121)
-                print phaseFmean.shape
+                #print phaseFmean.shape
                 plt.imshow(phaseFmean)
                 fig.add_subplot(122)
                 plt.imshow(saveAmpli)
@@ -475,14 +475,14 @@ def phase_retrieve_parallel_float_pupil_smooth_phase_pool(stack,parabola,mask,po
             cos=np.cos(phaseF).mean(axis=0)
             sin=np.sin(phaseF).mean(axis=0)
             phaseFmean=np.arctan2(sin,cos)
-            print '\r',iter,
+            #print '\r',iter,
 
             if debug:
                 plt.imshow(phaseFmean)
                 plt.title('Found phase' )
                 plt.show()
                 ''''''
-                print len(ampli.shape)
+                #print len(ampli.shape)
 
                 #plt.imshow(flatten_stack(ampli-stack))
                 plt.imshow(flatten_stack(ampli)**2)
@@ -501,13 +501,13 @@ def phase_retrieve_parallel_float_pupil_smooth_phase_pool(stack,parabola,mask,po
             stab_AmpliF.append(saveAmpli)
             stab_PhaseF.append(phaseFmean)
 
-            print 'Phase variance',stab_PhaseF1,
+            #print 'Phase variance',stab_PhaseF1,
             if stab_PhaseF1 < stop:
-                print 'converged'
+                #print 'converged'
                 break
 
     except:
-        print traceback.print_exc()
+        print(traceback.print_exc())
     #finally:
         #s.close()
         #s.join()
@@ -571,7 +571,8 @@ def flatten_stack(stack,direction='h'):
         elif direction=='v':
             return np.reshape(np.transpose(np.array(stack),axes=(0,1,2)),(stack.shape[1]*stack.shape[0],stack.shape[2]))
         else:
-            print 'Select the right direction to flatten: v for vertical and h for horizontal'
+            pass
+            #print 'Select the right direction to flatten: v for vertical and h for horizontal'
     else:
         return stack
 """
@@ -883,8 +884,8 @@ def corr_curve(img1,img2):
     correlation coefficient layer by layer for two z-stacks
     '''
 
-    if img1.shape <> img2.shape:
-        print 'Different shapes!', img1.shape,img2.shape
+    if img1.shape != img2.shape:
+        print('Different shapes!', img1.shape,img2.shape)
         pass
     else:
         h,l,w=img1.shape
@@ -991,7 +992,7 @@ def cropCenter(stack,size):
     c1,c2 = w/2,h/2
     #print w,h,c1,c2
     if size>w:
-        print 'wrong size'
+        print('wrong size')
         return 1
     elif len(stack.shape) == 2:
         #print '2D'
@@ -1026,7 +1027,7 @@ class r_phase(object):
         cPickle.dump(self.__dict__,open(path,'wb'))
 
     def load(self,path):
-        tmp_dict = cPickle.load(open(path,'rb'))
+        cPickle.load(open(path,'rb'))
         self.__dict__.update(tmp_dict)
 
     def gen_PSF(self, x,y,z,a,b):
@@ -1075,7 +1076,7 @@ class SingleCrop(object):
         try:
             bgMean =  np.mean((tmp))
         except ValueError:
-            print 'I.shape',I.shape
+            print('I.shape',I.shape)
             bgMean = I.mean()
         #bgMed = np.median(tmp)
         a = np.sum(I-bgMean)
@@ -1092,7 +1093,7 @@ def cropCenter(stack,size):
     c1,c2 = w/2,h/2
     #print w,h,c1,c2
     if size>w:
-        print 'wrong size'
+        print('wrong size')
         return 1
     elif len(stack.shape) == 2:
         #print '2D'
@@ -1249,7 +1250,7 @@ class MLE(object):
 
                 #print 'subiter', hj,
                 #print 'der' ,self.der_a,'der2',self.der_a2
-                if self.der_a2<>0:
+                if self.der_a2!=0:
                     #print 'updating crop.z'
                     atmp = crop.a-gammatmp*self.der_a/self.der_a2
                     if atmp >0:
@@ -1272,7 +1273,7 @@ class MLE(object):
 
                 #print 'subiter', hj,
                 #print 'gamma',gammatmp,self.der_z/self.der_z2
-                if self.der_z2<>0:
+                if self.der_z2!=0:
                     #print 'updating crop.z'
                     ztmp= crop.z-gammatmp*self.der_z/self.der_z2
 
@@ -1301,7 +1302,7 @@ class MLE(object):
 
                 #print 'subiter', hj,
                 #print 'derB',self.der_b,self.der_b2
-                if self.der_b2<>0:
+                if self.der_b2!=0:
                     #print 'updating crop.z'
                     crop.b= crop.b-gammatmp*self.der_b/self.der_b2
                     if crop.b<=0: crop.b = 1
@@ -1325,7 +1326,7 @@ class MLE(object):
 
                 #print 'subiter', hj,
                 #print 'gamma',gammatmp,self.der_z/self.der_z2
-                if self.der_x2<>0:
+                if self.der_x2!=0:
                     #print 'updating crop.z'
                     xtmp = crop.x-gammatmp*self.der_x/self.der_x2
                     if abs(xtmp)<3:
@@ -1349,7 +1350,7 @@ class MLE(object):
 
                 #print 'subiter', hj,
                 #print 'gamma',gammatmp,self.der_z/self.der_z2
-                if self.der_y2<>0:
+                if self.der_y2!=0:
                     #print 'updating crop.z'
                     ytmp = crop.y-gammatmp*self.der_y/self.der_y2
                     if abs(ytmp)<3:
@@ -1515,18 +1516,18 @@ class XcorrMLE:
             self.crops=[]
             for x1,y1,z in zip(x,y,self.zinits):
                 I=self.img[int(y1-s+1):int(y1+s+1),int(x1-s+1):int(x1+s+1)]
-                if self.debug: print 'I.shape',I.shape
+                if self.debug: print('I.shape',I.shape)
                 if I.shape == (self.cropSize,self.cropSize):
                     tmp = SingleCrop(I,X=x1 -self.shift[0] - self.pad_shift[0],Y=y1 -self.shift[1] - self.pad_shift[1],Z=z)
-                    if self.debug: print 'xc makecrops: shape is good'
+                    if self.debug: print('xc makecrops: shape is good')
                     if tmp.A>self.min_photons:
 
-                        if self.debug: print 'xc makecrops: photons is good'
+                        if self.debug: print('xc makecrops: photons is good')
                         self.crops.append(tmp)
                         Icoordinates_selected.append([y1,x1])
                     else:
 
-                        if self.debug: print 'photons found',tmp.A
+                        if self.debug: print('photons found',tmp.A)
             self.Icoordinates_selected = np.array(Icoordinates_selected)
         else:
             self.crops = []
@@ -1572,7 +1573,7 @@ def worker(fun,s, pool,fOpen,i,px):
         #pool.makeInactive(name)
         with pool.lock:
             pool.exitCodes.append(multiprocessing.current_process().exitcode)
-            print '\r{} frames, {} particles'.format(len(pool.exitCodes),len(pool.arr)),
+            print('\r{} frames, {} particles'.format(len(pool.exitCodes),len(pool.arr)))
 
 def gen_PSF23(x,y,z,a,b,pupil_init, phase,parabola, xslope, yslope ):
 
@@ -1635,11 +1636,11 @@ def SP_MLE(img,my_interp,z0=0.,dz=.05,A=1,da=10,db = 1e-5,gamma = .05,iterations
 
     phase_ind=np.array(my_interp(z0),dtype='int')
 
-    if debug: print 'using phase index ', phase_ind
+    if debug: print('using phase index ', phase_ind)
     if not refine:
         b=img.mean(axis=1).min()
         a=img.sum()-b*img.shape[0]*img.shape[1]
-    if debug: print 'a, b, z0',a,b, z0
+    if debug: print('a, b, z0',a,b, z0)
     x,y,z,I = 0,0,z0,img
     #a=1
     #b=0
@@ -1659,7 +1660,7 @@ def SP_MLE(img,my_interp,z0=0.,dz=.05,A=1,da=10,db = 1e-5,gamma = .05,iterations
         oldZ=z
         oldL=calc_ERF(ERF,phase_ind)
         for hj in range(4):
-            if derZ[1]<>0:
+            if derZ[1]!=0:
                 z= z-gammatmp*derZ[0]/(derZ[1])
             if calc_ERF(ERF,phase_ind)<=oldL:
                 break
@@ -1673,7 +1674,7 @@ def SP_MLE(img,my_interp,z0=0.,dz=.05,A=1,da=10,db = 1e-5,gamma = .05,iterations
         oldA=a
         oldL=calc_ERF(ERF,phase_ind)
         for hj in range(4):
-            if derA[1]<>0:
+            if derA[1] != 0:
                 a= a-gammatmp*derA[0]/(derA[1])
             if calc_ERF(ERF,phase_ind)<=oldL:
                 break
@@ -1686,7 +1687,7 @@ def SP_MLE(img,my_interp,z0=0.,dz=.05,A=1,da=10,db = 1e-5,gamma = .05,iterations
         oldB=b
         oldL=calc_ERF(ERF,phase_ind)
         for hj in range(4):
-            if derB[1]<>0:
+            if derB[1] != 0:
                 b= b-gammatmp*derB[0]/(derB[1])
             if calc_ERF(ERF,phase_ind)<=oldL:
                 break
@@ -1696,12 +1697,12 @@ def SP_MLE(img,my_interp,z0=0.,dz=.05,A=1,da=10,db = 1e-5,gamma = .05,iterations
 
 
         derB = derivB(db,ERF,phase_ind)
-        if derB[1]<>0:
+        if derB[1] != 0:
             b = b-gamma*derB[0]*1e-0/(derB[1])
         else:
             b=b
         if debug:
-            print '\r',iter,
+            print('\r',iter)
         #print derZ[0],z,derZ[2]
         #print derZ[0],derA[0],derB[0],z,a,b,derA[2]
         zh[iter] = z
@@ -1709,14 +1710,14 @@ def SP_MLE(img,my_interp,z0=0.,dz=.05,A=1,da=10,db = 1e-5,gamma = .05,iterations
         bh[iter] = b
         LL[iter] = derZ[2]
         if math.isnan(a):
-            print 'Error NaN',
+            print('Error NaN')
             break
         if iter>10 and np.abs(LL[iter]-LL[iter-1])<stop:
             #zh = zh[:iter]
-            if debug: print 'converged ',
+            if debug: print('converged ')
             conv=1
             break
-    if debug: print 'z=%.3f (err = %.3f), ampl=%.2f, bg=%.3f'%(z,(z-z0),a,b)
+    if debug: print('z=%.3f (err = %.3f), ampl=%.2f, bg=%.3f'%(z,(z-z0),a,b))
     return z, zh, ah, bh, LL[np.nonzero(LL)]
 
 def search_z(img,z0,debug=0):
@@ -1759,7 +1760,7 @@ def likelihood_matrix1(stack,zvector,my_interp,pupil_init1, phaseFS,parabola, xs
             #plt.imshow(stack[i][16:48,16:48])
             #plt.show()
             ll[i,j] = LE(st+.01,psf/psf.sum()+.01)
-            print '\r',i,
+            print('\r',i,)
             #cc=np.corrcoef(np.ravel(stack[i]),np.ravel(stack[j]))
             #print i,j,cc
     return ll
@@ -1804,18 +1805,18 @@ class BeadsStats(object):
             self.n_clusters_ = len(self.labels_unique)
 
             print("number of estimated clusters : %d" % self.n_clusters_)
-            print 'Used datset with the shape',subdata.shape
-            print 'found',self.labels.shape,'groups'
-            print 'number of groups', self.labels_unique.shape
+            print('Used datset with the shape',subdata.shape)
+            print('found',self.labels.shape,'groups')
+            print('number of groups', self.labels_unique.shape)
         except Exception as e:
             traceback.print_exc()
-            print e
+            print(e)
 
     def plotSegment(self):
         try:
             self.n_clusters_
         except:
-            print 'no clustering done. Try .doSegment(1,\'xy\')'
+            print('no clustering done. Try .doSegment(1,\'xy\')')
 
         from itertools import cycle
 
@@ -1877,11 +1878,11 @@ class BeadsStats(object):
         for i in np.unique(t):
             #print i
             found_sorted.append(subdata[t==i])
-        print 'found %i steps'%len(found_sorted)
+        print('found %i steps'%len(found_sorted))
         #found_sorted = np.array(found_sorted)
         found_std = np.array([tmp[:].std(axis=0) for tmp in found_sorted])
         found_mean = np.array([tmp[:].mean(axis=0) for tmp in found_sorted])
-        print 'found %i stats'%len(found_std)
+        print('found %i stats'%len(found_std))
         #plt.plot(tmp[np.abs(tmp-tmp.mean())<tmp.std()*3])
         #plt.show()
 
@@ -1894,7 +1895,7 @@ class BeadsStats(object):
         crlb = ModelPhaseCRLB2(-2,2,abs(z_step),num_phot,bg,phase,units=units)
         crlb.runPhase()
 
-        print 't shift',np.median(t)
+        print('t shift',np.median(t))
         plt.figure(figsize=(6,3))
         plt.plot(subdata[:,f],subdata[:,z],'.')
         plt.plot(subdata[:,f],(t-np.median(t))*z_step,'r-')

@@ -10,7 +10,7 @@ from skimage.feature import peak_local_max
 #from skimage import data, img_as_float
 import time
 
-import cPickle
+import _pickle as cPickle
 import numpy as np
 
 #import keras
@@ -88,7 +88,7 @@ class SPsampleClass:
                     img1=img/float(np.sum(img))
                     rawPSF.append(img1)
                     ii+=1
-                    print "\r\rProcessing frame %d/%d"%(ii,numSteps*numPass),
+                    print("\r\rProcessing frame %d/%d"%(ii,numSteps*numPass))
                 rawPSF1.append(rawPSF)
                 rawPSF=[]
 
@@ -112,7 +112,7 @@ class SPsampleClass:
             self.PSF=np.array(normPSF)
 
             self.PSF_rows, self.PSF_cols = self.PSF.shape[1],self.PSF.shape[2]
-            print '\nPSF is loaded with dimensions ',PSF.shape
+            print('\nPSF is loaded with dimensions ',PSF.shape)
 
             self.avPSF=PSF.mean(axis=0)
             self.zframes=self.PSF.shape[0]
@@ -120,7 +120,7 @@ class SPsampleClass:
             self.zvector = np.arange(-self.zrange/2,self.zrange/2+self.zstep,self.zstep)
 
             #cPickle.dump(self.avPSF, open("avPSF.cPickle", 'wb'))
-            print 'avPSF is created with dimensions ',self.avPSF.shape
+            print('avPSF is created with dimensions ',self.avPSF.shape)
 
             #x = np.linspace(-self.avPSF.shape[0]/2*self.px_size*1000,(self.avPSF.shape[0]/2-1)*self.px_size*1000,self.avPSF.shape[0])
             #y = np.linspace(-self.avPSF.shape[1]/2*self.px_size*1000,(self.avPSF.shape[1]/2-1)*self.px_size*1000,self.avPSF.shape[1])
@@ -129,20 +129,20 @@ class SPsampleClass:
             y = np.linspace(-self.avPSF.shape[1]/2,(self.avPSF.shape[1]/2-1),self.avPSF.shape[1])
             z = np.arange(self.zframes)
             self.Interpolator =  RegularGridInterpolator((z, x, y), np.array(self.PSF),bounds_error=False,fill_value=0)
-            print 'Interpolator is created '
+            print('Interpolator is created ')
 
             cPickle.dump((self.PSF,self.avPSF,self.Interpolator), open("PSF.cPickle", 'wb'))
-            print 'cPickled all into PSF.cPickle'
+            print('cPickled all into PSF.cPickle')
 
         except IOError as e:
-            print 'IOError :', e
+            print('IOError :', e)
             pass
 
     def interpolate(self,y,x,z):
         try:
             self.Interpolator
         except NameError:
-            print "loading Interpolator"
+            print("loading Interpolator")
             self.loadPSFfromcPickle()
         #else:
         #      print "sure, it was defined."
@@ -164,13 +164,13 @@ class SPsampleClass:
         self.zframes=self.PSF.shape[0]
         self.zrange=self.zstep*(self.zframes-1)
         self.zvector = np.arange(-self.zrange/2,self.zrange/2+self.zstep,self.zstep)
-        print '\nPSF is loaded with dimensions ',self.PSF.shape
+        print('\nPSF is loaded with dimensions ',self.PSF.shape)
 
     def showPSF(self):
         try:
             self.PSF
         except AttributeError:
-            print "No PSF found, loading PSF from cPickle"
+            print("No PSF found, loading PSF from cPickle")
             self.loadPSFfromcPickle()
         finally:
             fig=plt.figure(figsize=(15,10*self.PSF.shape[0]/60))
@@ -187,7 +187,7 @@ class SPsampleClass:
         try:
             self.PSF
         except AttributeError:
-            print "No PSF found, loading PSF from cPickle"
+            print("No PSF found, loading PSF from cPickle")
             self.loadPSFfromcPickle()
         finally:
             fig=plt.figure(figsize=(15,10))
@@ -204,7 +204,7 @@ class SPsampleClass:
         try:
             self.PSF
         except AttributeError:
-            print "No PSF found, loading PSF from cPickle"
+            print("No PSF found, loading PSF from cPickle")
             self.loadPSFfromcPickle()
         finally:
             fig=plt.figure(figsize=(15,10))
@@ -240,8 +240,8 @@ class SPsampleClass:
             #img = GDF(norm(img),1.5,4,.0)
             img=norm(img)
             X_train.append(img)
-            print "\rProcessing frame %s"%(i+1),
-        print '\n'
+            print("\rProcessing frame %s"%(i+1))
+        print('\n')
         return np.array(X_train).reshape(trainnum,1,self.PSF.shape[1],self.PSF.shape[2]).astype('float32'),\
                    np.array(Y_train)
 
@@ -249,7 +249,7 @@ class SPsampleClass:
         self.X_train, self.Y_train = self.genSPTrainSet(trainnum,xr,yr,bg,ampl)
         self.X_test, self.Y_test = self.genSPTrainSet(testnum,xr,yr,bg,ampl)
         cPickle.dump((self.X_train, self.Y_train, self.X_test, self.Y_test), open("trainset.cPickle", 'wb'))
-        print 'cPickled self.X_train, self.Y_train, self.X_test, self.Y_test into trainset.cPickle'
+        print('cPickled self.X_train, self.Y_train, self.X_test, self.Y_test into trainset.cPickle')
 
     def loadSPTrainTestSet(self,path='trainset.cPickle'):
         self.X_train, self.Y_train, self.X_test, self.Y_test = cPickle.load(open(path, 'rb'))
@@ -311,7 +311,7 @@ class SPsampleClass:
         self.model.save_weights('weights.h5')
         json_string = self.model.to_json()
         open('models.json', 'w').write(json_string)
-        print 'Saved model and weights into models.json weights.h5'
+        print('Saved model and weights into models.json weights.h5')
 
     def loadCNNnet(self,model_location='models/model_architecture-2015-02-08.json',weights_location='weights/weights2015-02-09-noisy0-100-loss=0.013.h5'):
         self.model = model_from_json(open(model_location).read())
@@ -321,7 +321,7 @@ class SPsampleClass:
 
         debug=debug
         frame=Image.open(path)
-        print 'Found a frame of %d x %d pixels'%(np.array(frame).shape[0],np.array(frame).shape[1])
+        print('Found a frame of %d x %d pixels'%(np.array(frame).shape[0],np.array(frame).shape[1]))
         counter=0
         if not limit:
             limit=1000000
@@ -363,7 +363,7 @@ class SPsampleClass:
                 #plt.imshow(im)
                 #break
                 if debug:
-                    print 'xcorr shape, max', im.shape, im.max()
+                    print('xcorr shape, max', im.shape, im.max())
                     #fig = plt.figure()
                     ax=fig.add_subplot(1,3,3)
                     plt.imshow(im,interpolation='none')
@@ -372,7 +372,7 @@ class SPsampleClass:
                     plt.show()
 
                 coordinates = (peak_local_max(im, min_distance=locdist))
-                if debug: print coordinates
+                if debug: print(coordinates)
 
                 #for k in range(len(coordinates)):
                 if len(coordinates):
@@ -394,9 +394,9 @@ class SPsampleClass:
                         #plt.show()
                     stack=np.array(stack)
                     cc=np.array(cc)
-                    if debug: print stack.shape
+                    if debug: print(stack.shape)
                     prediction=self.model.predict(stack.reshape(stack.shape[0],1,stack.shape[1],stack.shape[2]))
-                    if debug: print cc,prediction
+                    if debug: print(cc,prediction)
                     #cropshifts.append(np.array(prediction))
                     b = np.zeros((cc.shape[0],3))
 
@@ -416,7 +416,7 @@ class SPsampleClass:
                         self.found=ff
                         #cropshifts=prediction
                 if debug:
-                    print 'Found ', len(coordinates)
+                    print('Found ', len(coordinates))
                     fig=plt.figure(figsize=(len(coordinates)*5,10))
                     i=0
                     for c in range(len(coordinates)):
@@ -440,10 +440,10 @@ class SPsampleClass:
 
                     #plt.tight_layout()
                     plt.show()
-                print "\rProcessing frame %d"%(counter),
-            print '\nFound %d particles'%self.found.shape[0]
+                print("\rProcessing frame %d"%(counter))
+            print('\nFound %d particles'%self.found.shape[0])
 
         except EOFError:
-            print 'No more frames'
+            print('No more frames')
 
 #print 'SPsample library is loaded'
