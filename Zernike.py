@@ -5,6 +5,7 @@ from PhaseRetrieveTools import *
 from multiprocessing import Pool, cpu_count, Process, Queue
 import matplotlib.pyplot as plt
 import logging
+logging.basicConfig(level=logging.DEBUG)
 from scipy.io import loadmat
 import math
 import time
@@ -54,6 +55,12 @@ class Zernike:
     def __init__(self,
                  pupil,
                  num):
+        try:
+            num = int(num)
+            if num <=0:
+                raise ValueError('Provide positive number of Zernike modes')
+        except ValueError:
+            raise ValueError('Provide a valid number of Zernike modes')
         self.num = num
         p = pupil
         self.p = p
@@ -113,7 +120,7 @@ class Zernike:
         zern = self.zernStack
 
         r = np.max(ind)
-        print('Max order {}, num ind {}'.format(r, len(zern)))
+        logging.info('Max order {}, num ind {}'.format(r, len(zern)))
         for i in range(r + 1):
             ind1 = ind[ind[:, 0] == i]
             zern1 = zern[ind[:, 0] == i]
