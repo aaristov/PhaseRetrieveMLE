@@ -62,15 +62,26 @@ class Zernike:
         self.rho = rho
         self.phi = phi
 
-        R1 = lambda n, m, k, rho: (-1) ** k * np.math.factorial(n - k) / (
-                    np.math.factorial(k) * np.math.factorial((n + m) / 2 - k) * np.math.factorial(
-                (n - m) / 2 - k)) * rho ** (n - 2 * k)
-        Rnm = lambda n, m, rho: np.sum(np.array([R1(n, m, k, rho) for k in range(0, (n - m) / 2 + 1)]), axis=0)
-        # Rnm = lambda n,m,rho: np.array([R1(n,m,k,rho) for k in range(0,(n-m)/2+1)])
-        self.Znm1 = lambda n, m: Rnm(n, m, rho) * np.cos(m * phi)
-        self.Znm2 = lambda n, m: Rnm(n, -m, rho) * np.sin(-m * phi)
+        #R1 = lambda n, m, k, rho: (-1) ** k * np.math.factorial(n - k) / (
+        #           np.math.factorial(k) * np.math.factorial((n + m) / 2 - k) * np.math.factorial(
+        #        (n - m) / 2 - k)) * rho ** (n - 2 * k)
+        #Rnm = lambda n, m, rho: np.sum(np.array([R1(n, m, k, rho) for k in range(0, (n - m) / 2 + 1)]), axis=0)
+        ## Rnm = lambda n,m,rho: np.array([R1(n,m,k,rho) for k in range(0,(n-m)/2+1)])
+        self.Znm1 = lambda n, m: self.Rnm(n, m) * np.cos(m * phi)
+        self.Znm2 = lambda n, m: self.Rnm(n, -m) * np.sin(-m * phi)
         self.zernInd = self.genZernInd()
         self.zernStack = self.genZernStack()
+
+    def Rnm(self,n,m):
+        out=[]
+        for k in range(0, int((n - m) / 2 + 1)):
+            out.append(self.R1(n, m, k))
+            return np.sum(out,axis=0)
+
+    def R1(self,n,m,k):
+        return (-1) ** k * np.math.factorial(n - k) \
+               / (np.math.factorial(k) * np.math.factorial((n + m) / 2 - k)
+               * np.math.factorial((n - m) / 2 - k)) * self.rho ** (n - 2 * k)
 
     def switchZnm(self, n, m):
         if m >= 0:
@@ -84,12 +95,12 @@ class Zernike:
         nmStack = []
         while i < self.num:
 
-            for m in np.arange(-n, n + 1, 2):
+            for m in np.arange(-n, n + 1, 2,dtype='int'):
                 nmStack.append((n, m))
                 i += 1
             n += 1
-        self.zernInd = np.array(nmStack)
-        return np.array(nmStack)
+        self.zernInd = np.array(nmStack,dtype='int')
+        return np.array(nmStack,dtype='int')
 
     def genZernStack(self):
         out = np.array([self.switchZnm(*z) for z in self.zernInd])
