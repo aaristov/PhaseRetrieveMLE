@@ -11,36 +11,36 @@ import math
 import time
 
 
-class Pupil:
+class PupilMask:
     ''' Defines pupil parameters and parabola based on the size of image and optical params'''
 
     def __init__(self,
-                 img_size=128,
-                 numerical_aperture=1.49,
-                 immersion_medium_refractive_index=1.515,
-                 pixel_size=.11,  # um
-                 wavelength=.64,  # um
-                 pupilReductionInSize=1,  # pupil reduction of size
-                 parabolaMultiplier=1.,
+                 img_size:int=128,
+                 numerical_aperture:float=1.49,
+                 immersion_medium_refractive_index:float=1.515,
+                 pixel_size_um:float=.11,  # um
+                 wavelength:float=.64,  # um
+                 pupilReductionInSize:float=1,  # pupil reduction of size
+                 parabolaMultiplier:float=1.,
                  **kwargs):
         self.img_size = img_size
         self.NA = numerical_aperture
         self.oil_n = immersion_medium_refractive_index
-        self.px_size = pixel_size
+        self.px_size = pixel_size_um
         self.qy, self.qx = np.indices((img_size, img_size), dtype='f')
         qy, qx = self.qy, self.qx
 
-        pupil_px_size = 1 / (pixel_size * img_size)
+        pupil_px_size = 1 / (pixel_size_um * img_size)
         self.pupil_pxs = numerical_aperture / (wavelength * pupil_px_size)
         center = img_size / 2
         self.center = center
-        kx = 2 * np.pi * (qx - center) / (pixel_size * img_size)
-        ky = 2 * np.pi * (qy - center) / (pixel_size * img_size)
+        kx = 2 * np.pi * (qx - center) / (pixel_size_um * img_size)
+        ky = 2 * np.pi * (qy - center) / (pixel_size_um * img_size)
 
         self.pupilmask = np.ones_like(qx) * (
                     kx ** 2 + ky ** 2 <= (2 * np.pi * numerical_aperture / wavelength * pupilReductionInSize) ** 2)
 
-        self.xslope, self.yslope = qx / (img_size) * 2 * np.pi / pixel_size, qy / (img_size) * 2 * np.pi / pixel_size
+        self.xslope, self.yslope = qx / (img_size) * 2 * np.pi / pixel_size_um, qy / (img_size) * 2 * np.pi / pixel_size_um
         # with np.errstate(sqrt ='ignore'):
         parabola0 = np.sqrt(
             (2 * np.pi * immersion_medium_refractive_index / wavelength) ** 2 - (kx * self.pupilmask) ** 2 - (
@@ -49,12 +49,15 @@ class Pupil:
         self.parabola = parabola0 * parabolaMultiplier
 
 
-class Zernike:
+class ZernikePolynomials:
     ''' Generating Zernike modes according to Pupil size'''
 
     def __init__(self,
-                 pupil,
-                 num):
+                 pupil_mask:PupilMask,
+                 num:int):
+
+        assert isinstance(pupil_mask, PupilMask) #'First argument should be a PUpilMask instance'
+        assert isinstance(num,int) and num>0 #'Enter positive integer for number of Zernike modes'
         try:
             num = int(num)
             if num <=0:
@@ -62,7 +65,7 @@ class Zernike:
         except ValueError:
             raise ValueError('Provide a valid number of Zernike modes')
         self.num = num
-        p = pupil
+        p = pupil_mask
         self.p = p
         rho = np.array(np.sqrt((p.qx - p.center) ** 2 + (p.qy - p.center) ** 2) / p.pupil_pxs)
         phi = np.arctan2((p.qy - p.center), (p.qx - p.center))
@@ -134,7 +137,7 @@ class Zernike:
             plt.show()
 
 
-class ZernPhase(r_phase, object):
+class PupilFunction(object):
     '''Phase storage object to keep zernike weights updated and to generate psf
 
     zernWights = A, B, z2....zn
@@ -142,25 +145,25 @@ class ZernPhase(r_phase, object):
     B - background'''
 
     def __init__(self,
-                 ZernikeObject,
-                 pupil,
-                 zernWeights=None,
-                 pupilWeights=None,
+                 zernike_polynomials:ZernikePolynomials,
+                 pupil:PupilMask,
+                 zernWeights:[]=None,
+                 pupilWeights:[]=None,
                  ):
         # super(ZernPhase,self).__init__()
-        self.pupil = pupil.pupilmask
+        self.pupilmask = pupil.pupilmask
         self.parabola = pupil.parabola
-        self.ret_pupil = pupil.pupilmask
+        self.retrieved_pupil = pupil.pupilmask
 
         self.xslope = pupil.xslope
         self.yslope = pupil.yslope
 
-        self.zernArray = ZernikeObject.zernStack
+        self.zernArray = zernike_polynomials.zernStack
         # select circular modes for pupil
-        self.pupilZernikeArray = self.zernArray[ZernikeObject.zernInd[:, 1] == 0]
+        self.pupilZernikeArray = self.zernArray[zernike_polynomials.zernInd[:, 1] == 0]
 
         if zernWeights is None:
-            self.zernWeights = np.zeros(len(ZernikeObject.zernStack) + 2)
+            self.zernWeights = np.zeros(len(zernike_polynomials.zernStack) + 2)
         else:
             self.zernWeights = zernWeights
 
@@ -179,7 +182,7 @@ class ZernPhase(r_phase, object):
         # print 'z',z
         # print (self.ret_phase-self.parabola*z-self.xslope*x-self.yslope*y).shape
         ampl, phase = (
-            decomp1f(np.abs(self.ret_pupil), self.ret_phase - self.parabola * z - self.xslope * x - self.yslope * y))
+            decomp1f(np.abs(self.retrieved_pupil), self.ret_phase - self.parabola * z - self.xslope * x - self.yslope * y))
         # print ampl.shape
         if self.gaussSmooth:
             ampl = ndi.gaussian_filter(ampl, self.gaussSmooth)
@@ -194,7 +197,7 @@ class ZernPhase(r_phase, object):
 
     def updatePupil(self):
         weights3D = self.pupilZernikeWeights[:].reshape(len(self.pupilZernikeWeights[:]), 1, 1)
-        self.ret_pupil = self.pupil * (np.sum(weights3D * self.pupilZernikeArray[:], axis=0))
+        self.retrieved_pupil = self.pupilmask * (np.sum(weights3D * self.pupilZernikeArray[:], axis=0))
 
     def updatePhase(self):
         weights3D = self.zernWeights[2:].reshape(len(self.zernWeights[2:]), 1, 1)
@@ -628,14 +631,14 @@ class PhaseFitWrap(object):
 
         self.smooth = smooth
 
-        self.pupil = Pupil(img_size=self.size, numerical_aperture=self.NA, immersion_medium_refractive_index=self.n_oil,
-                           pixel_size=self.px_size, wavelength=self.wl, parabolaMultiplier=par_mul)
+        self.pupil = PupilMask(img_size=self.size, numerical_aperture=self.NA, immersion_medium_refractive_index=self.n_oil,
+                               pixel_size_um=self.px_size, wavelength=self.wl, parabolaMultiplier=par_mul)
         # self.pupil.parabola = self.pupil.parabola*1.5
-        self.zern = Zernike(self.pupil, zern_num)
-        self.zernPhase = ZernPhase(ZernikeObject=self.zern,
-                                   pupil=self.pupil,
-                                   zernWeights=self.zernWeights,
-                                   pupilWeights=self.pupilZernikeWeights)
+        self.zern = ZernikePolynomials(self.pupil, zern_num)
+        self.zernPhase = PupilFunction(ZernikeObject=self.zern,
+                                       pupil=self.pupil,
+                                       zernWeights=self.zernWeights,
+                                       pupilWeights=self.pupilZernikeWeights)
         self.zzz = FitZern(self.stack, self.zVect, self.zernPhase, fitPupil)
         self.psfArray = self.zernPhase.genPSFarray(self.zVect, self.size)[:]
         self.fullPsfArray = self.zernPhase.genPSFarray(self.zVect0, self.size)[:]
@@ -669,13 +672,13 @@ class PhaseFitWrap(object):
         fig = plt.figure(figsize=(8, 2))
 
         fig.add_subplot(1, 3, 1)
-        plt.imshow(self.zernPhase.ret_pupil)
+        plt.imshow(self.zernPhase.retrieved_pupil)
         plt.title('retrieved pupil')
-        plt.plot(self.size / 2 - self.zernPhase.ret_pupil[self.pupil.center] * 10, 'w')
+        plt.plot(self.size / 2 - self.zernPhase.retrieved_pupil[self.pupil.center] * 10, 'w')
         plt.colorbar()
 
         fig.add_subplot(1, 3, 2)
-        plt.imshow(self.zernPhase.ret_phase * (self.zernPhase.pupil))
+        plt.imshow(self.zernPhase.ret_phase * (self.zernPhase.pupilmask))
         plt.title('retrieved phase')
         plt.colorbar()
 
@@ -786,7 +789,7 @@ class PhaseFitWrap(object):
                       NA=self.NA,
                       px_size=self.px_size,
                       n_oil=self.n_oil,
-                      pupilAmp=self.zernPhase.ret_pupil,
+                      pupilAmp=self.zernPhase.retrieved_pupil,
                       pupilPhase=self.zernPhase.ret_phase,
                       zernWeights=self.zernPhase.zernWeights,
                       pupilZernikeWeights=self.zernPhase.pupilZernikeWeights,
@@ -1087,7 +1090,7 @@ class ReconstructionMLE:
         self.preCrop = lambda f: f[ymin:ymax, xmin:xmax]
 
 
-class ZernPhaseLt(ZernPhase, object):
+class ZernPhaseLt(PupilFunction, object):
     def __init__(self, **kwargs):
         '''
         Zernike phase for network manager.
@@ -1101,8 +1104,8 @@ class ZernPhaseLt(ZernPhase, object):
               gaussSmooth = myFit.zernPhase.gaussSmooth)
         '''
         img_size = kwargs["pupilAmp"].shape[0]
-        self.pupil = Pupil(img_size=img_size, numerical_aperture=kwargs['NA'], pixel_size=kwargs['px'],
-                           immersion_medium_refractive_index=kwargs['n_oil'])
+        self.pupil = PupilMask(img_size=img_size, numerical_aperture=kwargs['NA'], pixel_size_um=kwargs['px'],
+                               immersion_medium_refractive_index=kwargs['n_oil'])
         self.ret_pupil = kwargs['pupilAmp']
         self.ret_phase = kwargs['pupilPhase']
         self.parabola = self.pupil.parabola
