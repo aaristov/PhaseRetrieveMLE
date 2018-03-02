@@ -51,12 +51,12 @@ class TestPupilFunction(unittest.TestCase):
         self.pupilFunc = PupilFunction(self.z,self.p)
 
     def test_init(self):
-        assert np.array_equal(self.pupilFunc.getWeights(),np.zeros(15+2))
+        self.assertTrue(np.array_equal(self.pupilFunc.getWeights(),np.zeros(15+2)))
 
     def test_gen_PSF(self):
         psf = self.pupilFunc.gen_PSF(0,0,0,100,0,32)
-        assert psf.shape == (32,32)
-        assert int(psf.sum()) == 100
+        self.assertEqual(psf.shape,(32,32),'Shape is wrong')
+        self.assertAlmostEqual(psf.sum(),100,delta=1.,msg='Intensity is wrong')
 
 
 if __name__ == '__main__':
