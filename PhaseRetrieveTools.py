@@ -1090,17 +1090,18 @@ class SingleCrop(object):
 def cropCenter(stack,size):
     stack = np.array(stack)
     w,h = stack.shape[-1],stack.shape[-2]
-    c1,c2 = w/2,h/2
+    c1,c2 = w//2,h//2
+    s = size//2
     #print w,h,c1,c2
     if size>w:
         print('wrong size')
         return 1
     elif len(stack.shape) == 2:
         #print '2D'
-        return stack[c1-size/2:c1+size/2,c2-size/2:c2+size/2]
+        return stack[c1-s:c1+s,c2-s:c2+s]
     elif len(stack.shape) == 3:
         #print '3D'
-        return stack[:,c1-size/2:c1+size/2,c2-size/2:c2+size/2]
+        return stack[:,c1-s:c1+s,c2-s:c2+s]
 
 # error functions:
 LE = lambda I,F: np.mean(-np.log(F)*I + F,dtype = np.float64)
