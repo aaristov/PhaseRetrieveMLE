@@ -21,7 +21,7 @@ class PupilMask:
                  pixel_size_um:float=.11,  # um
                  wavelength:float=.64,  # um
                  pupilReductionInSize:float=1,  # pupil reduction of size
-                 parabolaMultiplier:float=1.,
+                 parabola_multiplier:float=1.,
                  **kwargs):
         self.img_size = img_size
         self.NA = numerical_aperture
@@ -46,7 +46,7 @@ class PupilMask:
             (2 * np.pi * immersion_medium_refractive_index / wavelength) ** 2 - (kx * self.pupilmask) ** 2 - (
                         ky * self.pupilmask) ** 2)
         # parabola0[np.isnan(parabola0)] = 0
-        self.parabola = parabola0 * parabolaMultiplier
+        self.parabola = parabola0 * parabola_multiplier
 
 
 class ZernikePolynomials:
@@ -188,7 +188,7 @@ class PupilFunction(object):
             ampl = ndi.gaussian_filter(ampl, self.gaussSmooth)
         return b + a * norm_sum(cropCenter(ampl, size) ** 2)
 
-    def genPSFarray(self, zvect, size):
+    def genPSFarray(self, zvect:[], size:int):
         # plt.imshow(self.gen_PSF(.0,.0,zvect[0],100,0,size=32))
         # plt.show()
         a, b = self.zernWeights[0], self.zernWeights[1]
@@ -203,11 +203,11 @@ class PupilFunction(object):
         weights3D = self.zernWeights[2:].reshape(len(self.zernWeights[2:]), 1, 1)
         self.ret_phase = np.sum(weights3D * self.zernArray[:], axis=0)
 
-    def updateWeight(self, i, val):
+    def updateWeight(self, i:int, val:float):
         self.zernWeights[i] += val
         self.updatePhase()
 
-    def updatePupilWeight(self, i, val):
+    def updatePupilWeight(self, i:int, val:float):
         self.pupilZernikeWeights[i] += val
         self.updatePupil()
 
@@ -317,9 +317,9 @@ class FitZern:
     '''gradient descent for PSF fitting using phase Zernike modes '''
 
     def __init__(self,
-                 zStack,
-                 zVector,
-                 myPhase,
+                 zStack:[],
+                 zVector:[],
+                 myPhase:PupilFunction,
                  fitPupil=True):
 
         zStack = np.array(zStack)
@@ -577,7 +577,7 @@ class FitZern:
             print('end of epochs, dL', dL)
 
 
-class PhaseFitWrap(object):
+class FitPupilFunction(object):
     def __init__(self, stack=None, NA=1.49, zStep=.1, skip=0, n_oil=1.51, px_size=.11, wl=.64, zern_num=36, smooth=0,
                  fitPupil=True, fileName=None, plot=False, par_mul=1.):
         if fileName:
@@ -632,10 +632,10 @@ class PhaseFitWrap(object):
         self.smooth = smooth
 
         self.pupil = PupilMask(img_size=self.size, numerical_aperture=self.NA, immersion_medium_refractive_index=self.n_oil,
-                               pixel_size_um=self.px_size, wavelength=self.wl, parabolaMultiplier=par_mul)
+                               pixel_size_um=self.px_size, wavelength=self.wl, parabola_multiplier=par_mul)
         # self.pupil.parabola = self.pupil.parabola*1.5
         self.zern = ZernikePolynomials(self.pupil, zern_num)
-        self.zernPhase = PupilFunction(ZernikeObject=self.zern,
+        self.zernPhase = PupilFunction(zernike_polynomials=self.zern,
                                        pupil=self.pupil,
                                        zernWeights=self.zernWeights,
                                        pupilWeights=self.pupilZernikeWeights)

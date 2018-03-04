@@ -58,6 +58,16 @@ class TestPupilFunction(unittest.TestCase):
         self.assertEqual(psf.shape,(32,32),'Shape is wrong')
         self.assertAlmostEqual(psf.sum(),100,delta=1.,msg='Intensity is wrong')
 
+    def test_getWeights(self):
+        self.assertTrue(np.array_equal(self.pupilFunc.getWeights(),np.zeros(15+2)))
+
+    def test_updateWeight(self):
+        self.pupilFunc.updateWeight(10,1)
+        target = np.zeros(15 + 2)
+        target[10]+=1
+        self.assertTrue(np.array_equal(self.pupilFunc.getWeights(), target))
+
+
 
 if __name__ == '__main__':
     unittest.main()

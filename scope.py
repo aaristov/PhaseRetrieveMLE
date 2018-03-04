@@ -1,8 +1,48 @@
+import numpy as np
+from Zernike import PupilFunction,PupilMask,FitPupilFunction,ZernikePolynomials
+from ScopeComponents import *
+import logging
+logging.basicConfig(level=logging.DEBUG)
+
 class Scope(object):
-    parameters=dict(NA=None,
-                    pixel_size=None,
-                    immersion_medium_RI=None,
+    parameters=dict(numerical_aperture=None,
+                    pixel_size_um=None,
+                    immersion_medium_refractive_index=None,
                     mounting_medium_RI=None)
+
+    def __init__(self, pixel_calibration:PixelSizeCalibrationUm, objective_lens:ObjectiveLens=OilObjectiveLens60x(), sample:Sample=StandardSample()):
+        self._add_objective_lens(objective_lens)
+        self._add_sample(sample)
+        self._add_pixel_calibration(pixel_calibration)
+        logging.info('Scope parameters set: {}'.format(self.parameters))
+        self.pupilFunc = None
+        self.zernikePolynomials = None
+        self.pupilMask = None
+
+    def _add_objective_lens(self, objective_lens:ObjectiveLens):
+        NA = objective_lens.get_numerical_aperture()
+        assert isinstance(NA,float)
+        self.parameters['numerical_aperture']=NA
+
+        RI = objective_lens.get_immersion_refractive_index()
+        assert isinstance(RI,float)
+        self.parameters['immersion_medium_refractive_index']=RI
+
+    def _add_sample(self, sample:Sample):
+        RI = sample.get_mounting_medium_RI()
+        assert isinstance(RI,float)
+        self.parameters["mounting_medium_RI"]=RI
+
+
+    def _add_pixel_calibration(self, px:PixelSizeCalibrationUm):
+        px_ = px
+        assert isinstance(px_,float)
+        self.parameters["pixel_size_um"]=px_
+
+    def init_pupil(self):
+        self.pupilMask = PupilMask(**self.parameters)
+        self.zernikePolynomials = ZernikePolynomials(self.pupilMask, 15)
+        self.pupilFunc = PupilFunction(self.zernikePolynomials, self.pupilMask)
 
     def get_frame(self):
         pass
@@ -14,62 +54,27 @@ class Scope(object):
         pass
 
 
-class LiquidMedium(object):
-    name = None
-    RI = None
+class CalibratePupilFuction(Scope):
+    pupil_fitter=NotImplemented
 
-    def getName(self):
-        return self.name
+    def __init__(self,**parameters_dict):
+        self.initialize_fitter()
+        self.parameters
 
-    def getRI(self):
-        return self.RI
+    def initialize_fitter(self)->pupil_fitter:
+        self.init_pupil_mask()
+        self.init_pupil_function()
+        self.init_pupil_fitter()
 
-class Water(LiquidMedium):
-    name = 'Water'
-    RI=1.33
+    def fit(self,z_stack:np.ndarray,z_vector:np.ndarray):
+        return self.pupil_fitter(z_stack,z_vector)
 
-class Oil(LiquidMedium):
-    name='Oil'
-    RI=1.518
+    def init_pupil_mask(self)->PupilMask:
+        raise NotImplementedError
 
+    def init_pupil_function(self)->PupilFunction:
+        raise NotImplementedError
 
-class ObjectiveLens(object):
-    title=None
-    numericalAperture=None
-    magnification = None
-    immersionMediumRI = None
-
-    def get_numerical_aperture(self):
-        return self.numericalAperture
-
-    def get_immersion_refractive_inderx(self):
-        return self.immersionMediumRI
-
-    def get_magnification(self):
-        return self.magnification
-
-    def get_title(self):
-        return self.title
-
-
-class WaterObjectiveLens60x(ObjectiveLens):
-    title = 'Water Objective Lens Plan'
-    numericalAperture = 1.2
-    magnification = 60
-    immersionMediumRI = Water().getRI()
-
-
-class OilObjectiveLens60x(ObjectiveLens):
-    title = 'Oil objective lens Apo'
-    numericalAperture = 1.49
-    magnification = 60
-    immersionMediumRI = Oil().getRI()
-
-
-class Sample(object):
-    coverslip = None
-    mountingMediumRI = None
-
-    def get_mounting_medium_RI(self):
-        return self.mountingMediumRI
+    def init_pupil_fitter(self)->FitPupilFunction:
+        raise NotImplementedError
 
