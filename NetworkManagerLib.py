@@ -1,9 +1,10 @@
 ### implementation of network manager for palm reconstruction
 
 import multiprocessing
-import Queue
+import numpy as np
+from multiprocessing import Queue
 from multiprocessing.managers import BaseManager,DictProxy
-import cPickle
+import _pickle as cPickle
 from Zernike import *
 import socket
 import sys,os,csv
@@ -51,7 +52,7 @@ class NetworkManager(object):
             self.loadFiles(filePath)
             self.filePath = filePath
 
-        print 'Server is ready!'
+        print('Server is ready!')
 
         tt = threading.Thread(target=self.collectionRoutines,args=())
         tt.daemon=True
@@ -100,43 +101,43 @@ class NetworkManager(object):
 
                 except Exception as e:
                     traceback.print_exc()
-                    print a
-                    print e
+                    print(a)
+                    print(e)
 
 
             self.saveResults()
             #self.server.shutdown(self.server)
             t = 0
-            print '\n',
+            print('\n'),
             while len(self.activeList)>0:
-                print '\rWaiting for workers to disconnect {} sec ({} left)'.format(t,len(self.activeList)),
+                print('\rWaiting for workers to disconnect {} sec ({} left)'.format(t,len(self.activeList))),
                 sys.stdout.flush()
                 t+=1
                 time.sleep(1)
-            print '\rWaiting for workers to disconnect {} sec ({} left)'.format(t,len(self.activeList)),
-            print '\n exiting'
+            print('\rWaiting for workers to disconnect {} sec ({} left)'.format(t,len(self.activeList))),
+            print('\n exiting')
             sys.stdout.flush()
             os._exit(0)
 
 
         except Exception as e:
-            print e
+            print(e)
             self.saveResults()
             sys.exit(1)
 
 
     def loadFiles(self,folder):
         self.folder = folder
-        print 'reading file list from ',folder,'*.tif'
+        print('reading file list from ',folder,'*.tif')
         sys.stdout.flush()
         fileList = sorted(glob.glob(folder+'*.tif'))
         self.fileList = fileList
         for i in range(len(fileList)):
             self.queue.put((i,fileList[i]))
             #print '\rloading files ',i,
-        print 'loaded {} files '.format(i+1)
+        print('loaded {} files '.format(i+1))
         self.length = i+1
-        print '\n'
+        print('\n')
 
     def updateFolder(self):
         while not self.stop:
@@ -158,24 +159,24 @@ class NetworkManager(object):
 
 
     def saveResults(self):
-        print 'saving results:'
+        print('saving results:')
         sys.stdout.flush()
         path = self.folder[:-5]
         self.path = path+'myLoc.csv'
         try:
             saveTS(self.found,open(self.path,'w'))
-            print  'results save in {}'.format(self.path)
+            print('results save in {}'.format(self.path))
             sys.stdout.flush()
         except Exception as e:
-            print 'Saving failed, {}'.format(e)
+            print('Saving failed, {}'.format(e))
             sys.stdout.flush()
 
     def printStatus(self):
         while len(self.frames)<self.length:
-            print '\r {}/{} frames, {} molecules, {} workers'.format(len(self.frames),
+            print('\r {}/{} frames, {} molecules, {} workers'.format(len(self.frames),
                                                         self.length,
                                                         self.molecules,
-                                                        len(self.activeList)),
+                                                        len(self.activeList))),
             sys.stdout.flush()
             time.sleep(1)
 
@@ -198,7 +199,7 @@ class NetworkReconstructor(object):
             m = QueueManager(address=(ip,port), authkey=authkey)
             m.connect()
         except:
-            print 'Server not found, exiting'
+            print('Server not found, exiting')
             sys.stdout.flush()
             os._exit(1)
 
@@ -282,7 +283,7 @@ class NetworkReconstructor(object):
         w.start()
 
         name = socket.gethostname()
-        print self.name, multiprocessing.cpu_count()
+        print(self.name, multiprocessing.cpu_count())
         sys.stdout.flush()
 
         if join: w.join()
@@ -299,7 +300,7 @@ class NetworkReconstructor(object):
             w.daemon = True
             w.start()
         try:
-            print self.name, multiprocessing.cpu_count(),len(ww)
+            print(self.name, multiprocessing.cpu_count(),len(ww))
             sys.stdout.flush()
             for w in ww:
                 if join: w.join()
@@ -312,4 +313,4 @@ class NetworkReconstructor(object):
         fileList = sorted(glob.glob(folder+'*.tif'))
         for i in range(len(fileList)):
             self.queue.put((i,fileList[i]))
-            print '\r',i,
+            print('\r',i,)

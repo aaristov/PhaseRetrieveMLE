@@ -57,7 +57,7 @@ class Scope(object):
 class CalibratePupilFuction(Scope):
     pupil_fitter=NotImplemented
 
-    def __init__(self,**parameters_dict):
+    def __init__(self, **parameters_dict):
         self.initialize_fitter()
         self.parameters
 
